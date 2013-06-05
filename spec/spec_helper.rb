@@ -52,6 +52,9 @@ RSpec.configure do |config|
     init_haml_helpers
   end
 
+  # Ensure each spec runs in isolation
+  config.before(:each) { Mongoid::IdentityMap.clear }
+
   config.after(:all) do
     WebMock.disable_net_connect! :allow => /coveralls\.io/
   end
