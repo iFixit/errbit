@@ -1,14 +1,14 @@
 class ProblemsController < ApplicationController
-  before_filter :find_app, :except => [:index, :all, :destroy_several, :resolve_several, :unresolve_several, :merge_several, :unmerge_several]
-  before_filter :find_problem, :except => [:index, :all, :destroy_several, :resolve_several, :unresolve_several, :merge_several, :unmerge_several]
+  before_filter :find_app, :except => [:index, :all, :destroy_several, :resolve_several, :unresolve_several, :merge_several, :unmerge_several, :search]
+  before_filter :find_problem, :except => [:index, :all, :destroy_several, :resolve_several, :unresolve_several, :merge_several, :unmerge_several, :search]
   before_filter :find_selected_problems, :only => [:destroy_several, :resolve_several, :unresolve_several, :merge_several, :unmerge_several]
-  before_filter :set_sorting_params, :only => [:index, :all]
+  before_filter :set_sorting_params, :only => [:index, :all, :search]
   before_filter :set_tracker_params, :only => [:create_issue]
 
   def index
     app_scope = current_user.admin? ? App.all : current_user.apps
-
-    @problems = Problem.for_apps(app_scope).in_env(params[:environment]).unresolved.ordered_by(@sort, @order)
+    @all_errs = params[:all_errs]
+    @problems = Problem.for_apps(app_scope).in_env(params[:environment]).all_else_unresolved(@all_errs).ordered_by(@sort, @order)
     @selected_problems = params[:problems] || []
     respond_to do |format|
       format.html do
@@ -18,20 +18,10 @@ class ProblemsController < ApplicationController
     end
   end
 
-  def all
-    app_scope = current_user.admin? ? App.all : current_user.apps
-    @problems = Problem.for_apps(app_scope).ordered_by(@sort, @order).page(params[:page]).per(current_user.per_page)
-    @selected_problems = params[:problems] || []
-  end
-
   def show
     @notices  = @problem.notices.reverse_ordered.page(params[:notice]).per(1)
     @notice   = @notices.first
     @comment = Comment.new
-    if request.headers['X-PJAX']
-      params["_pjax"] = nil
-      render :layout => false
-    end
   end
 
   def create_issue
@@ -89,6 +79,18 @@ class ProblemsController < ApplicationController
     nb_problem_destroy = ProblemDestroy.execute(@selected_problems)
     flash[:notice] = "#{I18n.t(:n_errs_have, :count => nb_problem_destroy)} been deleted."
     redirect_to :back
+  end
+
+  def search
+    if params[:app_id]
+      app_scope = App.where(:_id => params[:app_id])
+    else
+      app_scope = current_user.admin? ? App.all : current_user.apps
+    end
+    @problems = Problem.search(params[:search]).for_apps(app_scope).in_env(params[:environment]).all_else_unresolved(params[:all_errs]).ordered_by(@sort, @order)
+    @selected_problems = params[:problems] || []
+    @problems = @problems.page(params[:page]).per(current_user.per_page)
+    render :content_type => 'text/javascript'
   end
 
   protected
