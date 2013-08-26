@@ -509,6 +509,8 @@ a.button.active {
 /* Tab Bar */
 .tab-bar {
   margin-top: 12px;
+}
+#problem_table .tab-bar {
   margin-bottom: 0;
   position: fixed;
   bottom: 0;
