@@ -123,6 +123,13 @@ class Problem
     where(:first_notice_at.lte => date_range.end).where("$or" => [{:resolved_at => nil}, {:resolved_at.gte => date_range.begin}])
   end
 
+  # Returns an array of unix epoc timestamps for the created_at field of
+  # all notices sincethe since parameter
+  def timestamps_since(since)
+    notices.where(:created_at.gte => since).
+    pluck(:created_at).
+    map {|created_at| created_at.to_time.to_i }
+  end
 
   def reset_cached_attributes
     ProblemUpdaterCache.new(self).update
