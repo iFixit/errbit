@@ -1,6 +1,8 @@
 Fabricator(:problem) do
-  app! { Fabricate(:app) }
+  app { Fabricate(:app) }
   comments { [] }
+  error_class 'FooError'
+  environment 'production'
 end
 
 Fabricator(:problem_with_comments, :from => :problem) do
@@ -19,4 +21,10 @@ Fabricator(:problem_with_errs, :from => :problem) do
   }
 end
 
-
+Fabricator(:problem_resolved, :from => :problem) do
+  after_create do |pr|
+    Fabricate(:notice,
+              :err => Fabricate(:err, :problem => pr))
+    pr.resolve!
+  end
+end

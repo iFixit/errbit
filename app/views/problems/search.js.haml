@@ -1,5 +1,3 @@
-$("#problem_table").empty().append("#{escape_javascript(render('problems/table', :problems => @problems))}");
-$.getScript('/assets/errbit.js')
+$("#problem_table").empty().append("#{escape_javascript(render('problems/table', :problems => problems))}");
 $("#flash-messages").empty()
-
-	
+toggleProblemsCheckboxes()

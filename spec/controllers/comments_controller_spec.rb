@@ -1,6 +1,4 @@
-require 'spec_helper'
-
-describe CommentsController do
+describe CommentsController, type: 'controller' do
   let(:app) { Fabricate(:app) }
   let(:err) { Fabricate(:err, :problem => Fabricate(:problem, :app => app, :environment => "production")) }
 
@@ -22,11 +20,11 @@ describe CommentsController do
       end
 
       it "should create the comment" do
-        problem.comments.size.should == 1
+        expect(problem.comments.size).to eq 1
       end
 
       it "should redirect to problem page" do
-        response.should redirect_to( app_problem_path(problem.app, problem) )
+        expect(response).to redirect_to( app_problem_path(problem.app, problem) )
       end
     end
   end
@@ -48,11 +46,11 @@ describe CommentsController do
       end
 
       it "should delete the comment" do
-        problem.comments.detect{|c| c.id.to_s == comment.id }.should == nil
+        expect(problem.comments.detect{|c| c.id.to_s == comment.id }).to be nil
       end
 
       it "should redirect to problem page" do
-        response.should redirect_to( app_problem_path(problem.app, problem) )
+        expect(response).to redirect_to( app_problem_path(problem.app, problem) )
       end
     end
   end

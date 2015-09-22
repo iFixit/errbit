@@ -2,7 +2,7 @@ class NoticesController < ApplicationController
 
   class ParamsError < StandardError; end
 
-  skip_before_filter :authenticate_user!, :only => :create
+  skip_before_action :authenticate_user!, :only => :create
 
   rescue_from ParamsError, :with => :bad_params
 
@@ -11,11 +11,15 @@ class NoticesController < ApplicationController
     report = ErrorReport.new(notice_params)
 
     if report.valid?
-      report.generate_notice!
-      api_xml = report.notice.to_xml(:only => false, :methods => [:id]) do |xml|
-        xml.url locate_url(report.notice.id, :host => Errbit::Config.host)
+      if report.should_keep?
+        report.generate_notice!
+        api_xml = report.notice.to_xml(:only => false, :methods => [:id]) do |xml|
+         xml.url locate_url(report.notice.id, :host => Errbit::Config.host)
+        end
+        render :xml => api_xml
+      else
+        render :text => "Notice for old app version ignored"
       end
-      render :xml => api_xml
     else
       render :text => "Your API key is unknown", :status => 422
     end

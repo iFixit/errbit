@@ -1,20 +1,13 @@
 require File.expand_path('../boot', __FILE__)
 
-# Pick the frameworks you want:
-# require 'rails/all'
-# require "active_record/railtie"
 require "action_controller/railtie"
 require "action_mailer/railtie"
-# require "active_resource/railtie"
 require 'mongoid/railtie'
 require "sprockets/railtie"
 
-if defined?(Bundler)
-  # If you precompile assets before deploying to production, use this line
-  Bundler.require(*Rails.groups(:assets => %w(development test)))
-  # If you want your assets lazily compiled in production, use this line
-  # Bundler.require(:default, :assets, Rails.env)
-end
+# Require the gems listed in Gemfile, including any gems
+# you've limited to :test, :development, or :production.
+Bundler.require(*Rails.groups)
 
 module Errbit
   class Application < Rails::Application
@@ -25,12 +18,17 @@ module Errbit
     # Custom directories with classes and modules you want to be autoloadable.
     config.autoload_paths += [Rails.root.join('lib')]
 
-    # Only load the plugins named here, in the order given (default is alphabetical).
-    # :all can be used as a placeholder for all plugins not explicitly named.
-    # config.plugins = [ :exception_notification, :ssl_requirement, :all ]
+    config.before_initialize do
+      # Load up Errbit::Config with values from the environment
+      require Rails.root.join('config/load')
 
-    # Activate observers that should always be running.
-    # config.active_record.observers = :cacher, :garbage_collector, :forum_observer
+      config.secret_key_base = Errbit::Config.secret_key_base
+      config.serve_static_assets = Errbit::Config.serve_static_assets
+    end
+
+    initializer "errbit.mongoid", before: "mongoid.load-config" do
+      require Rails.root.join('config/mongo')
+    end
 
     # Set Time.zone default to the specified zone and make Active Record auto-convert to this zone.
     # Run "rake -D time" for a list of tasks for finding time zone names. Default is UTC.
@@ -48,33 +46,10 @@ module Errbit
       g.fixture_replacement :fabrication
     end
 
-    # Enable the mongoid identity map for performance
-    Mongoid.identity_map_enabled = true
-
     # IssueTracker subclasses use inheritance, so preloading models provides querying consistency in dev mode.
     config.mongoid.preload_models = true
 
-    # Set up observers
-    config.mongoid.observers = :deploy_observer, :notice_observer, :comment_observer
-
-    # Configure the default encoding used in templates for Ruby 1.9.
-    config.encoding = "utf-8"
-
-    # Configure sensitive parameters which will be filtered from the log file.
-    config.filter_parameters += [:password]
-
     # Configure Devise mailer to use our mailer layout.
     config.to_prepare { Devise::Mailer.layout "mailer" }
-
-
-    # Enable the asset pipeline
-    config.assets.enabled = true
-
-    # Need to initialize Rails environment for issue_tracker_icons.css.erb
-    config.assets.initialize_on_precompile = true
-
-    # Version of your assets, change this if you want to expire all your assets
-    config.assets.version = '1.0'
   end
 end
-

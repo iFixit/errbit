@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe ProblemUpdaterCache do
   let(:problem) { Fabricate(:problem_with_errs) }
   let(:first_errs) { problem.errs }
@@ -27,17 +25,15 @@ describe ProblemUpdaterCache do
 
         it 'update information about this notice' do
           expect(problem.message).to eq notice.message
-          expect(problem.environment).to eq notice.environment_name
-          expect(problem.error_class).to eq notice.error_class
           expect(problem.where).to eq notice.where
         end
 
         it 'update first_notice_at' do
-          expect(problem.first_notice_at).to eq notice.created_at
+          expect(problem.first_notice_at).to eq notice.reload.created_at
         end
 
         it 'update last_notice_at' do
-          expect(problem.last_notice_at).to eq notice.created_at
+          expect(problem.last_notice_at).to eq notice.reload.created_at
         end
 
         it 'update stats messages' do
@@ -68,17 +64,15 @@ describe ProblemUpdaterCache do
         end
         it 'update information about this notice' do
           expect(problem.message).to eq notice.message
-          expect(problem.environment).to eq notice.environment_name
-          expect(problem.error_class).to eq notice.error_class
           expect(problem.where).to eq notice.where
         end
 
         it 'update first_notice_at' do
-          expect(problem.first_notice_at.to_i).to be_within(1).of(notice.created_at.to_i)
+          expect(problem.first_notice_at.to_i).to be_within(2).of(notice.created_at.to_i)
         end
 
         it 'update last_notice_at' do
-          expect(problem.last_notice_at.to_i).to be_within(1).of(notice.created_at.to_i)
+          expect(problem.last_notice_at.to_i).to be_within(2).of(notice.created_at.to_i)
         end
 
         it 'update stats messages' do
@@ -118,8 +112,6 @@ describe ProblemUpdaterCache do
 
       it 'update information about this notice' do
         expect(problem.message).to eq notice.message
-        expect(problem.environment).to eq notice.environment_name
-        expect(problem.error_class).to eq notice.error_class
         expect(problem.where).to eq notice.where
       end
 

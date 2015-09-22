@@ -36,7 +36,7 @@ class NotificationServices::GtalkService < NotificationService
   end
 
   def url
-    "http://www.google.com/talk/" || service_url
+    service_url || "http://www.google.com/talk/"
   end
 
   def create_notification(problem)
@@ -47,12 +47,14 @@ class NotificationServices::GtalkService < NotificationService
 
     #has to look like this to be formatted properly in the client
     message =  """#{problem.app.name.to_s}
-http://#{Errbit::Config.host}/apps/#{problem.app.id.to_s}
+#{Errbit::Config.protocol}://#{Errbit::Config.host}/apps/#{problem.app.id.to_s}
 #{notification_description problem}"""
 
     # post the issue to the xmpp room(s)
     send_to_users(client, message) unless user_id.blank?
     send_to_muc(client, message) unless room_id.blank?
+  ensure
+    client.close unless client.nil?
   end
 
   private

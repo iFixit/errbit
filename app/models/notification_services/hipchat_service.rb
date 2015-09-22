@@ -24,12 +24,13 @@ if defined? HipChat
     def create_notification(problem)
       url = app_problem_url problem.app, problem
       message = <<-MSG.strip_heredoc
-        [#{ERB::Util.html_escape problem.app.name}]#{ERB::Util.html_escape notification_description(problem)}<br>
-        <a href="#{url}">#{url}</a>
+        <strong>#{ERB::Util.html_escape problem.app.name}</strong> error in <strong>#{ERB::Util.html_escape problem.environment}</strong> at <strong>#{ERB::Util.html_escape problem.where}</strong> (<a href="#{url}">details</a>)<br>
+        &nbsp;&nbsp;#{ERB::Util.html_escape problem.message.to_s.truncate(100)}<br>
+        &nbsp;&nbsp;Times occurred: #{problem.notices_count}
       MSG
 
       client = HipChat::Client.new(api_token)
-      client[room_id].send('Errbit', message, :color => 'red')
+      client[room_id].send('Errbit', message, :color => 'red', :notify => true)
     end
   end
 end

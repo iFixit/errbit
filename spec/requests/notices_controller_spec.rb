@@ -1,9 +1,5 @@
-require 'spec_helper'
-
-describe "Notices management" do
-
-  let(:errbit_app) { Fabricate(:app,
-                       :api_key => 'APIKEY') }
+describe "Notices management", type: 'request' do
+  let(:errbit_app) { Fabricate(:app, :api_key => 'APIKEY') }
 
   describe "create a new notice" do
     context "with valide notice" do
@@ -38,13 +34,20 @@ describe "Notices management" do
           post '/notifier_api/v2/notices', :data => xml
           expect(response.status).to eq 422
           expect(response.body).to eq "Your API key is unknown"
-        }.to_not change {
+        }.to_not change(errbit_app.problems, :count)
+      end
+    end
+
+    context "with GET request" do
+      let(:xml) { Rails.root.join('spec','fixtures','hoptoad_test_notice.xml').read }
+      it 'save a new notice' do
+        expect {
+          get '/notifier_api/v2/notices', :data => xml
+          expect(response).to be_success
+        }.to change {
           errbit_app.problems.count
         }.by(1)
       end
-
     end
-
   end
-
 end

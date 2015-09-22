@@ -26,32 +26,33 @@ class Problem
   field :hosts,       :type => Hash, :default => {}
   field :comments_count, :type => Integer, :default => 0
 
-  index :app_id
-  index :app_name
-  index :message
-  index :last_notice_at
-  index :first_notice_at
-  index :last_deploy_at
-  index :resolved_at
-  index :notices_count
+  index :app_id => 1
+  index :app_name => 1
+  index :message => 1
+  index :last_notice_at => 1
+  index :first_notice_at => 1
+  index :last_deploy_at => 1
+  index :resolved_at => 1
+  index :notices_count => 1
 
   belongs_to :app
   has_many :errs, :inverse_of => :problem, :dependent => :destroy
   has_many :comments, :inverse_of => :err, :dependent => :destroy
 
+  validates_presence_of :environment
+
   before_create :cache_app_attributes
 
-  scope :resolved, where(:resolved => true)
-  scope :unresolved, where(:resolved => false)
-  scope :ordered, order_by(:last_notice_at.desc)
+  scope :resolved, ->{ where(:resolved => true) }
+  scope :unresolved, ->{ where(:resolved => false) }
+  scope :ordered, ->{ order_by(:last_notice_at.desc) }
   scope :for_apps, lambda {|apps| where(:app_id.in => apps.all.map(&:id))}
 
   validates_presence_of :last_notice_at, :first_notice_at
 
-
-  def self.all_else_unresolved all
-    if all
-      find(:all)
+  def self.all_else_unresolved(fetch_all)
+    if fetch_all
+      all
     else
       where(:resolved => false)
     end
@@ -61,12 +62,15 @@ class Problem
     env.present? ? where(:environment => env) : scoped
   end
 
-  def notices
-    Notice.for_errs(errs).ordered
+  def url
+    Rails.application.routes.url_helpers.app_problem_url(app, self,
+      :host => Errbit::Config.host,
+      :port => Errbit::Config.port
+    )
   end
 
-  def comments_allowed?
-    Errbit::Config.allow_comments_with_issue_tracker || !app.issue_tracker_configured?
+  def notices
+    Notice.for_errs(errs).ordered
   end
 
   def resolve!
@@ -91,11 +95,12 @@ class Problem
   end
 
   def unmerge!
+    attrs = {:error_class => error_class, :environment => environment}
     problem_errs = errs.to_a
     problem_errs.shift
     [self] + problem_errs.map(&:id).map do |err_id|
       err = Err.find(err_id)
-      app.problems.create.tap do |new_problem|
+      app.problems.create(attrs).tap do |new_problem|
         err.update_attribute(:problem_id, new_problem.id)
         new_problem.reset_cached_attributes
       end
@@ -118,6 +123,13 @@ class Problem
     where(:first_notice_at.lte => date_range.end).where("$or" => [{:resolved_at => nil}, {:resolved_at.gte => date_range.begin}])
   end
 
+  # Returns an array of unix epoc timestamps for the created_at field of
+  # all notices sincethe since parameter
+  def timestamps_since(since)
+    notices.where(:created_at.gte => since).
+    pluck(:created_at).
+    map {|created_at| created_at.to_time.to_i }
+  end
 
   def reset_cached_attributes
     ProblemUpdaterCache.new(self).update
@@ -129,8 +141,8 @@ class Problem
       self.last_deploy_at = if (last_deploy = app.deploys.where(:environment => self.environment).last)
         last_deploy.created_at.utc
       end
-      collection.update({'_id' => self.id},
-                        {'$set' => {'app_name' => self.app_name,
+      collection.find('_id' => self.id)
+                .update({'$set' => {'app_name' => self.app_name,
                           'last_deploy_at' => self.last_deploy_at.try(:utc)}})
     end
   end
@@ -146,11 +158,17 @@ class Problem
   def issue_type
     # Return issue_type if configured, but fall back to detecting app's issue tracker
     attributes['issue_type'] ||=
-    (app.issue_tracker_configured? && app.issue_tracker.label) || nil
+    (app.issue_tracker_configured? && app.issue_tracker.type_tracker) || nil
   end
 
   def self.search(value)
-    where.or(:error_class => /#{value}/i).or(:where => /#{value}/i).or(:message => /#{value}/i).or(:app_name => /#{value}/i).or(:environment => /#{value}/i)
+    any_of(
+      {:error_class => /#{value}/i},
+      {:where => /#{value}/i},
+      {:message => /#{value}/i},
+      {:app_name => /#{value}/i},
+      {:environment => /#{value}/i}
+    )
   end
 
   private
@@ -169,4 +187,3 @@ class Problem
       Digest::MD5.hexdigest(value.to_s)
     end
 end
-

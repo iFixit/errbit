@@ -9,7 +9,7 @@
   <framework>Rails: 3.2.11</framework>
   <error>
     <class>HoptoadTestingException</class>
-    <message>HoptoadTestingException: Testing hoptoad via "rake hoptoad:test". If you can see this, it works.</message>
+    <message><![CDATA[HoptoadTestingException: Testing hoptoad via "rake hoptoad:test". If you can see this, it works & works well.]]></message>
     <backtrace>
       <line number="425" file="[GEM_ROOT]/gems/activesupport-3.0.0.rc/lib/active_support/callbacks.rb" method="_run__2115867319__process_action__262109504__callbacks"/>
       <line number="404" file="[GEM_ROOT]/gems/activesupport-3.0.0.rc/lib/active_support/callbacks.rb" method="send"/>
@@ -87,7 +87,7 @@
     </backtrace>
   </error>
   <request>
-    <url>http://example.org/verify</url>
+    <url><![CDATA[http://example.org/verify/cupcake=fistfight&lovebird=doomsayer]]></url>
     <component>application</component>
     <action>verify</action>
     <params>

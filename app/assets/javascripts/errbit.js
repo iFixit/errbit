@@ -14,27 +14,18 @@ $(function() {
 
     bindRequiredPasswordMarks();
 
-    $('#watcher_name').live("click", function() {
-      $(this).closest('form').find('.show').removeClass('show');
-      $('#app_watchers_attributes_0_user_id').addClass('show');
-    });
-
-    $('#watcher_email').live("click", function() {
-      $(this).closest('form').find('.show').removeClass('show');
-      $('#app_watchers_attributes_0_email').addClass('show');
-    });
-
-    $('a.copy_config').live("click", function() {
+    // On page apps/:app_id/edit
+    $('a.copy_config').on("click", function() {
       $('select.choose_other_app').show().focus();
     });
 
-    $('select.choose_other_app').live("change", function() {
+    $('select.choose_other_app').on("change", function() {
       var loc = window.location;
       window.location.href = loc.protocol + "//" + loc.host + loc.pathname +
                              "?copy_attributes_from=" + $(this).val();
     });
 
-    $('input[type=submit][data-action]').click(function() {
+    $('input[type=submit][data-action]').live('click', function() {
       $(this).closest('form').attr('action', $(this).attr('data-action'));
     });
 
@@ -79,10 +70,10 @@ $(function() {
     panel.show();
   }
 
-  function toggleProblemsCheckboxes() {
+  window.toggleProblemsCheckboxes = function() {
     var checkboxToggler = $('#toggle_problems_checkboxes');
 
-    checkboxToggler.live("click", function() {
+    checkboxToggler.on("click", function() {
       $('input[name^="problems"]').each(function() {
         this.checked = checkboxToggler.get(0).checked;
       });
@@ -125,7 +116,7 @@ $(function() {
     $('td.backtrace_separator').hide();
   }
   // Show external backtrace lines when clicking separator
-  $('td.backtrace_separator span').live('click', show_external_backtrace);
+  $('td.backtrace_separator span').on('click', show_external_backtrace);
   // Hide external backtrace on page load
   hide_external_backtrace();
 

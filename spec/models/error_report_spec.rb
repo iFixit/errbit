@@ -1,7 +1,7 @@
-require 'spec_helper'
 require 'airbrake/version'
 require 'airbrake/backtrace'
 require 'airbrake/notice'
+require 'airbrake/utils/params_cleaner'
 
 # MonkeyPatch to instanciate a Airbrake::Notice without configure
 # Airbrake
@@ -40,9 +40,22 @@ describe ErrorReport do
     end
 
     describe "#backtrace" do
-
       it 'should have valid backtrace' do
-        error_report.backtrace.should be_valid
+        expect(error_report.backtrace).to be_valid
+      end
+    end
+
+    describe "#fingerprint_strategy" do
+      it "should be possible to change how fingerprints are generated" do
+        def error_report.fingerprint_strategy
+          Class.new do
+            def self.generate(*args)
+              'fingerprintzzz'
+            end
+          end
+        end
+
+        expect(error_report.error.fingerprint).to eq('fingerprintzzz')
       end
     end
 
@@ -54,6 +67,7 @@ describe ErrorReport do
           app.reload.problems.count
         }.by(1)
       end
+
       context "with notice generate by Airbrake gem" do
         let(:xml) { Airbrake::Notice.new(
           :exception => Exception.new,
@@ -76,97 +90,96 @@ describe ErrorReport do
         its(:framework) { should == 'Rails: 3.2.11' }
 
         it 'has complete backtrace' do
-          subject.backtrace_lines.size.should == 73
-          subject.backtrace_lines.last['file'].should == '[GEM_ROOT]/bin/rake'
+          expect(subject.backtrace_lines.size).to eq 73
+          expect(subject.backtrace_lines.last['file']).to eq '[GEM_ROOT]/bin/rake'
         end
         it 'has server_environement' do
-          subject.server_environment['environment-name'].should == 'development'
+          expect(subject.server_environment['environment-name']).to eq 'development'
         end
 
         it 'has request' do
-          subject.request['url'].should == 'http://example.org/verify'
-          subject.request['params']['controller'].should == 'application'
+          expect(subject.request['url']).to eq 'http://example.org/verify/cupcake=fistfight&lovebird=doomsayer'
+          expect(subject.request['params']['controller']).to eq 'application'
         end
 
         it 'has notifier' do
-          subject.notifier['name'].should == 'Hoptoad Notifier'
+          expect(subject.notifier['name']).to eq 'Hoptoad Notifier'
         end
 
         it 'get user_attributes' do
-          subject.user_attributes['id'].should == '123'
-          subject.user_attributes['name'].should == 'Mr. Bean'
-          subject.user_attributes['email'].should == 'mr.bean@example.com'
-          subject.user_attributes['username'].should == 'mrbean'
+          expect(subject.user_attributes['id']).to eq '123'
+          expect(subject.user_attributes['name']).to eq 'Mr. Bean'
+          expect(subject.user_attributes['email']).to eq 'mr.bean@example.com'
+          expect(subject.user_attributes['username']).to eq 'mrbean'
         end
+
         it 'valid env_vars' do
-        # XML: <var key="SCRIPT_NAME"/>
-        subject.env_vars.should have_key('SCRIPT_NAME')
-        subject.env_vars['SCRIPT_NAME'].should be_nil # blank ends up nil
+          # XML: <var key="SCRIPT_NAME"/>
+          expect(subject.env_vars).to have_key('SCRIPT_NAME')
+          expect(subject.env_vars['SCRIPT_NAME']).to be_nil # blank ends up nil
 
-        # XML representation:
-        # <var key="rack.session.options">
-        #   <var key="secure">false</var>
-        #   <var key="httponly">true</var>
-        #   <var key="path">/</var>
-        #   <var key="expire_after"/>
-        #   <var key="domain"/>
-        #   <var key="id"/>
-        # </var>
-        expected = {
-          'secure'        => 'false',
-          'httponly'      => 'true',
-          'path'          => '/',
-          'expire_after'  => nil,
-          'domain'        => nil,
-          'id'            => nil
-        }
-        subject.env_vars.should have_key('rack_session_options')
-        subject.env_vars['rack_session_options'].should eql(expected)
-      end
-      end
-
-      it 'save a notice assignes to err' do
-        error_report.generate_notice!
-        error_report.notice.err.should be_a(Err)
-      end
-
-      it 'memoize the notice' do
-        expect {
-          error_report.generate_notice!
-          error_report.generate_notice!
-        }.to change {
-          Notice.count
-        }.by(1)
-      end
-
-      it 'find the correct err for the notice' do
-        Fabricate(
-          :err, {
-            :fingerprint => error_report.fingerprint,
-            :problem => Fabricate(:problem, :resolved => true)
+          # XML representation:
+          # <var key="rack.session.options">
+          #   <var key="secure">false</var>
+          #   <var key="httponly">true</var>
+          #   <var key="path">/</var>
+          #   <var key="expire_after"/>
+          #   <var key="domain"/>
+          #   <var key="id"/>
+          # </var>
+          expected = {
+            'secure'        => 'false',
+            'httponly'      => 'true',
+            'path'          => '/',
+            'expire_after'  => nil,
+            'domain'        => nil,
+            'id'            => nil
           }
-        )
-        expect {
-          error_report.generate_notice!
-        }.to change {
-          error_report.error.resolved?
-        }.from(true).to(false)
+          expect(subject.env_vars).to have_key('rack_session_options')
+          expect(subject.env_vars['rack_session_options']).to eql(expected)
+        end
       end
+    end
 
-      context "with notification service configured" do
-        before do
-          app.notify_on_errs = true
-          app.watchers.build(:email => 'foo@example.com')
-          app.save
-        end
-        it 'send email' do
-          notice = error_report.generate_notice!
-          email = ActionMailer::Base.deliveries.last
-          email.to.should include(app.watchers.first.email)
-          email.subject.should include(notice.message.truncate(50))
-          email.subject.should include("[#{app.name}]")
-          email.subject.should include("[#{notice.environment_name}]")
-        end
+    it 'save a notice assignes to err' do
+      error_report.generate_notice!
+      expect(error_report.notice.err).to be_a(Err)
+    end
+
+    it 'memoize the notice' do
+      expect {
+        error_report.generate_notice!
+        error_report.generate_notice!
+      }.to change {
+        Notice.count
+      }.by(1)
+    end
+
+    it 'find the correct err for the notice' do
+      err = Fabricate(:err, :problem => Fabricate(:problem, :resolved => true))
+
+      allow(error_report).to receive(:fingerprint).and_return(err.fingerprint)
+
+      expect {
+        error_report.generate_notice!
+      }.to change {
+        error_report.error.resolved?
+      }.from(true).to(false)
+    end
+
+    context "with notification service configured" do
+      before do
+        app.notify_on_errs = true
+        app.watchers.build(:email => 'foo@example.com')
+        app.save
+      end
+      it 'send email' do
+        notice = error_report.generate_notice!
+        email = ActionMailer::Base.deliveries.last
+        expect(email.to).to include(app.watchers.first.email)
+        expect(email.subject).to include(notice.message.truncate(50))
+        expect(email.subject).to include("[#{app.name}]")
+        expect(email.subject).to include("[#{notice.environment_name}]")
       end
 
       context "with xml without request section" do
@@ -231,5 +244,33 @@ describe ErrorReport do
       end
     end
 
+    describe "#should_keep?" do
+      context "with current app version not set" do
+        before do
+          error_report.app.current_app_version = nil
+          error_report.server_environment['app-version'] = '1.0'
+        end
+
+        it "return true" do
+          expect(error_report.should_keep?).to be true
+        end
+      end
+
+      context "with current app version set" do
+        before do
+          error_report.app.current_app_version = '1.0'
+        end
+
+        it "return true if current or newer" do
+          error_report.server_environment['app-version'] = '1.0'
+          expect(error_report.should_keep?).to be true
+        end
+
+        it "return false if older" do
+          error_report.server_environment['app-version'] = '0.9'
+          expect(error_report.should_keep?).to be false
+        end
+      end
+    end
   end
 end

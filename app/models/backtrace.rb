@@ -3,7 +3,7 @@ class Backtrace
   include Mongoid::Timestamps
 
   field :fingerprint
-  index :fingerprint
+  index :fingerprint => 1
 
   has_many :notices
   has_one :notice
@@ -19,7 +19,7 @@ class Backtrace
   end
 
   def similar
-    Backtrace.first(:conditions => { :fingerprint => fingerprint } )
+    Backtrace.where(:fingerprint => fingerprint).first
   end
 
   def raw=(raw)

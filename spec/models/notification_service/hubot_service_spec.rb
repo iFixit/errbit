@@ -1,6 +1,4 @@
-require 'spec_helper'
-
-describe NotificationService::HubotService do
+describe NotificationService::HubotService, type: 'model' do
   it "it should send a notification to Hubot" do
     # setup
     notice = Fabricate :notice
@@ -8,7 +6,7 @@ describe NotificationService::HubotService do
     problem = notice.problem
 
     # faraday stubbing
-    HTTParty.should_receive(:post).with(notification_service.api_token, :body => {:message => an_instance_of(String), :room => notification_service.room_id}).and_return(true)
+    expect(HTTParty).to receive(:post).with(notification_service.api_token, :body => {:message => an_instance_of(String), :room => notification_service.room_id}).and_return(true)
 
     notification_service.create_notification(problem)
   end

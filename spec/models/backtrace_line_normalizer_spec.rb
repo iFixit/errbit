@@ -1,6 +1,4 @@
-require 'spec_helper'
-
-describe BacktraceLineNormalizer do
+describe BacktraceLineNormalizer, type: 'model' do
   subject { described_class.new(raw_line).call }
 
   describe "sanitize" do
@@ -8,11 +6,11 @@ describe BacktraceLineNormalizer do
       let(:raw_line) { { 'number' => rand(999), 'file' => nil, 'method' => nil } }
 
       it "should replace nil file with [unknown source]" do
-        subject['file'].should == "[unknown source]"
+        expect(subject['file']).to eq "[unknown source]"
       end
 
       it "should replace nil method with [unknown method]" do
-        subject['method'].should == "[unknown method]"
+        expect(subject['method']).to eq "[unknown method]"
       end
     end
 
@@ -20,7 +18,7 @@ describe BacktraceLineNormalizer do
       let(:raw_line) { { 'number' => rand(999), 'file' => "[PROJECT_ROOT]/assets/file.js?body=1", 'method' => nil } }
 
       it "should strip query strings from files" do
-        subject['file'].should == "[PROJECT_ROOT]/assets/file.js"
+        expect(subject['file']).to eq "[PROJECT_ROOT]/assets/file.js"
       end
     end
   end

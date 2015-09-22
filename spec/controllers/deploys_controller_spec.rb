@@ -1,6 +1,4 @@
-require 'spec_helper'
-
-describe DeploysController do
+describe DeploysController, type: 'controller' do
   render_views
 
   context 'POST #create' do
@@ -16,13 +14,13 @@ describe DeploysController do
     end
 
     it 'finds the app via the api key' do
-      App.should_receive(:find_by_api_key!).with('APIKEY').and_return(@app)
+      expect(App).to receive(:find_by_api_key!).with('APIKEY').and_return(@app)
       post :create, :deploy => @params, :api_key => 'APIKEY'
     end
 
     it 'creates a deploy' do
-      App.stub(:find_by_api_key!).and_return(@app)
-      @app.deploys.should_receive(:create!).
+      expect(App).to receive(:find_by_api_key!).and_return(@app)
+      expect(@app.deploys).to receive(:create!).
         with({
           :username     => 'john.doe',
           :environment  => 'production',
@@ -37,10 +35,9 @@ describe DeploysController do
     it 'sends an email notification when configured to do so' do
       post :create, :deploy => @params, :api_key => 'APIKEY'
       email = ActionMailer::Base.deliveries.last
-      email.to.should include(@app.watchers.first.email)
-      email.subject.should == "[#{@app.name}] Deployed to production by john.doe"
+      expect(email.to).to include(@app.watchers.first.email)
+      expect(email.subject).to eq "[#{@app.name}] Deployed to production by john.doe"
     end
-
   end
 
   context "GET #index" do
@@ -51,14 +48,12 @@ describe DeploysController do
     end
 
     it "should render successfully" do
-      response.should be_success
+      expect(response).to be_success
     end
 
     it "should contain info about existing deploy" do
-      response.body.should match(@deploy.short_revision)
-      response.body.should match(@deploy.app.name)
+      expect(response.body).to match(@deploy.short_revision)
+      expect(response.body).to match(@deploy.app.name)
     end
   end
-
 end
-
