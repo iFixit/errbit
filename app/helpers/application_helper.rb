@@ -72,9 +72,10 @@ module ApplicationHelper
   def sparkline(times, start_time, num_buckets = 10)
     times = times.select {|time| time >= start_time }
     buckets = bucketize(times, start_time, Time.now.to_i, num_buckets)
+    max_val = buckets.max.to_f
     bars = buckets.map do |val|
-      percent = (val * 100.0).round(2).to_s + "%";
-      "<i style='height:#{percent}'></i>"
+      percent = (val / max_val * 100.0).round(2).to_s + "%";
+      "<i title=\"#{val}\" style='height:#{percent}'></i>"
     end.join()
     "<div class='spark'>#{bars}</div>".html_safe
   end
@@ -91,8 +92,7 @@ module ApplicationHelper
       bucket_index = get_min.call((normalized * num_buckets).floor, num_buckets-1)
       buckets[bucket_index] += 1
     end
-    max = buckets.max.to_f
-    return buckets.map {|count| count / max}
+    return buckets
   end
 
 
