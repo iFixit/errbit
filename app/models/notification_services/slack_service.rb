@@ -16,7 +16,8 @@ class NotificationServices::SlackService < NotificationService
   def message_for_slack(problem)
     recent = problem.notices.where(:created_at.gte => 5.minutes.ago).count
     message = problem.message.gsub(/\s+/," ").truncate(100)
-    "total:#{problem.notices_count}  5min:#{recent}  <#{problem_url(problem)}|#{encode(message)}>"
+    app = problem.app.name
+    "#{app} - total:#{problem.notices_count}  5min:#{recent}  <#{problem_url(problem)}|#{encode(message)}>"
   end
 
   def encode(str)
