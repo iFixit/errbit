@@ -14,11 +14,23 @@ class NotificationServices::SlackService < NotificationService
   end
 
   def message_for_slack(problem)
-    "[#{problem.app.name}][#{problem.environment}][#{problem.where}]: #{problem.error_class} #{problem_url(problem)}"
+    recent = problem.notices.where(:created_at.gte => 5.minutes.ago).count
+    message = problem.message.gsub(/\s+/," ").truncate(100)
+    app = problem.app.name
+    "#{app} - total:#{problem.notices_count}  5min:#{recent}  <#{problem_url(problem)}|#{encode(message)}>"
+  end
+
+  def encode(str)
+    str.gsub("&", "&amp;")
+       .gsub("<", "&lt;")
+       .gsub(">", "&gt;")
   end
 
   def post_payload(problem)
-    {:text => message_for_slack(problem) }.to_json
+    {
+      :text => message_for_slack(problem),
+      :mrkdwn => false
+    }.to_json
   end
 
   def create_notification(problem)
