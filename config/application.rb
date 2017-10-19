@@ -1,9 +1,9 @@
 require File.expand_path('../boot', __FILE__)
 
-require "action_controller/railtie"
-require "action_mailer/railtie"
-require 'mongoid/railtie'
-require "sprockets/railtie"
+require 'action_controller/railtie'
+require 'action_mailer/railtie'
+# require 'mongoid/railtie'
+require 'sprockets/railtie'
 
 # Require the gems listed in Gemfile, including any gems
 # you've limited to :test, :development, or :production.
@@ -19,14 +19,11 @@ module Errbit
     config.autoload_paths += [Rails.root.join('lib')]
 
     config.before_initialize do
-      # Load up Errbit::Config with values from the environment
-      require Rails.root.join('config/load')
-
       config.secret_key_base = Errbit::Config.secret_key_base
-      config.serve_static_assets = Errbit::Config.serve_static_assets
+      config.serve_static_files = Errbit::Config.serve_static_assets
     end
 
-    initializer "errbit.mongoid", before: "mongoid.load-config" do
+    initializer 'errbit.mongoid', before: 'mongoid.load-config' do
       require Rails.root.join('config/mongo')
     end
 
@@ -40,9 +37,9 @@ module Errbit
 
     # > rails generate - config
     config.generators do |g|
-      g.orm             :mongoid
+      g.orm :mongoid
       g.template_engine :haml
-      g.test_framework  :rspec, :fixture => false
+      g.test_framework :rspec, fixture: false
       g.fixture_replacement :fabrication
     end
 
@@ -50,6 +47,8 @@ module Errbit
     config.mongoid.preload_models = true
 
     # Configure Devise mailer to use our mailer layout.
-    config.to_prepare { Devise::Mailer.layout "mailer" }
+    config.to_prepare { Devise::Mailer.layout 'mailer' }
+
+    config.active_job.queue_adapter = :sucker_punch
   end
 end
