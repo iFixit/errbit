@@ -57,6 +57,9 @@ RSpec.configure do |config|
     Draper::ViewContext.current.instance_eval { init_haml_helpers }
   end
 
+  # Ensure each spec runs in isolation
+  config.before(:each) { Mongoid::IdentityMap.clear }
+
   config.infer_spec_type_from_file_location!
 end
 

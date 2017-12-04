@@ -60,7 +60,36 @@ module ApplicationHelper
     end
   end
 
+  def sparkline(times, start_time, num_buckets = 10)
+    times = times.select {|time| time >= start_time }
+    buckets = bucketize(times, start_time, Time.now.to_i, num_buckets)
+    max_val = buckets.max.to_f
+    bars = buckets.map do |val|
+      percent = (val / max_val * 100.0).round(2).to_s + "%";
+      "<i title=\"#{val}\" style='height:#{percent}'></i>"
+    end.join()
+    "<div class='spark'>#{bars}</div>".html_safe
+  end
+
+  def bucketize(values, min, max, num_buckets)
+    get_min = lambda { |a,b| a > b ? b : a }
+    range = max - min
+    buckets = Array.new(num_buckets, 0)
+    values.each do |val|
+      normalized = (val - min) / range.to_f
+
+      # Use get_min() here because there will inevitably be one value == max
+      # which means normalized = 1 and bucket[1 * num_buckets] doesn't exist
+      bucket_index = get_min.call((normalized * num_buckets).floor, num_buckets-1)
+      buckets[bucket_index] += 1
+    end
+    return buckets
+  end
+
 private
+  def total_from_tallies(tallies)
+    tallies.values.inject(0) {|sum, n| sum + n}
+  end
 
   def total_from_tallies(tallies)
     tallies.values.sum

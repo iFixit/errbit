@@ -47,6 +47,7 @@ describe ProblemDestroy do
   end
 
   context "in integration way" do
+    Mongoid::identity_map_enabled = false
     let!(:problem) { Fabricate(:problem) }
     let!(:comment_1) { Fabricate(:comment, err: problem) }
     let!(:comment_2) { Fabricate(:comment, err: problem) }
