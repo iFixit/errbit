@@ -57,8 +57,8 @@ updates and notifications.
 
 The list of requirements to install Errbit are:
 
-* Ruby >= 2.3.x
-* MongoDB 3.4.x-4.0.x
+* Ruby >= 2.5.x
+* MongoDB >= 4.0.x
 
 Installation
 ------------
@@ -67,10 +67,10 @@ Installation
 Rails applications.
 
 * [Install MongoDB](https://www.mongodb.org/downloads)
-* git clone https://github.com/errbit/errbit.git
-* bundle install
-* bundle exec rake errbit:bootstrap
-* bundle exec rails server
+* `git clone https://github.com/errbit/errbit.git`
+* `bundle install`
+* `bundle exec rake errbit:bootstrap`
+* `bundle exec rails server`
 
 Configuration
 -------------
@@ -317,7 +317,7 @@ Solutions known to work are listed below:
 
 | Language | Project |
 |----------|---------|
-| PHP (&gt;= 5.3) | [flippa/errbit-php](https://github.com/flippa/errbit-php) |
+| PHP (&gt;= 5.3) | [wasilak/errbit-php](https://github.com/wasilak/errbit-php) |
 | OOP PHP (&gt;= 5.3) | [emgiezet/errbitPHP](https://github.com/emgiezet/errbitPHP) |
 | Python | [mkorenkov/errbit.py](https://github.com/mkorenkov/errbit.py) , [pulseenergy/airbrakepy](https://github.com/pulseenergy/airbrakepy) |
 
