@@ -9,6 +9,7 @@ gem 'actionpack', RAILS_VERSION
 gem 'railties', RAILS_VERSION
 
 gem 'actionmailer_inline_css'
+gem 'bigdecimal', '~> 1.4'
 gem 'decent_exposure'
 gem 'devise', '~> 4.7'
 gem 'dotenv-rails'
